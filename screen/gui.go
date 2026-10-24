@@ -1,4 +1,4 @@
-package view
+package screen
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func (v *FyneMinesweeperView) setupUI() {
 	// 1. Digital LED Counter Display (Mines Left)
 	v.mineCounter = canvas.NewText("099", color.RGBA{R: 255, G: 0, B: 0, A: 255})
 	v.mineCounter.TextSize = 22
-	v.mineCounter.Style.Monospace = true
+	v.mineCounter.TextStyle.Monospace = true
 	counterBg := canvas.NewRectangle(WinBlack)
 	counterBox := container.NewStack(counterBg, v.mineCounter)
 

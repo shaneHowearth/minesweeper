@@ -1,4 +1,4 @@
-package view
+package screen
 
 import (
 	"fmt"
@@ -98,10 +98,25 @@ func (r *tileRenderer) Objects() []fyne.CanvasObject {
 
 	if !tile.IsRevealed {
 		// Raised 3D Bevel for Unrevealed Tiles
-		top := canvas.NewLine(WinWhite, fyne.NewPos(0, 0), fyne.NewPos(24, 0))
-		left := canvas.NewLine(WinWhite, fyne.NewPos(0, 0), fyne.NewPos(0, 24))
-		bottom := canvas.NewLine(WinDarkGray, fyne.NewPos(0, 23), fyne.NewPos(24, 23))
-		right := canvas.NewLine(WinDarkGray, fyne.NewPos(23, 0), fyne.NewPos(23, 24))
+		top := canvas.NewLine(WinWhite)
+		top.Position1 = fyne.NewPos(0, 0)
+		top.Position2 = fyne.NewPos(24, 0)
+		top.StrokeWidth = 2
+
+		left := canvas.NewLine(WinWhite)
+		left.Position1 = fyne.NewPos(0, 0)
+		left.Position2 = fyne.NewPos(0, 24)
+		left.StrokeWidth = 2
+
+		bottom := canvas.NewLine(WinDarkGray)
+		bottom.Position1 = fyne.NewPos(0, 23)
+		bottom.Position2 = fyne.NewPos(24, 23)
+		bottom.StrokeWidth = 2
+
+		right := canvas.NewLine(WinDarkGray)
+		right.Position1 = fyne.NewPos(23, 0)
+		right.Position2 = fyne.NewPos(23, 24)
+		right.StrokeWidth = 2
 
 		top.StrokeWidth = 2
 		left.StrokeWidth = 2
@@ -141,7 +156,7 @@ func (r *tileRenderer) Objects() []fyne.CanvasObject {
 				NumberColors[tile.AdjacentMines],
 			)
 			numText.TextSize = 16
-			numText.Style.Bold = true
+			numText.TextStyle.Bold = true
 			numText.Alignment = fyne.TextAlignCenter
 			numText.Resize(size)
 			objects = append(objects, numText)
