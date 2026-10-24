@@ -8,9 +8,13 @@ import (
 
 func main() {
 	// Standard Beginner Minesweeper dimensions: 9 rows, 9 cols, 10 mines
-	rows := 9
-	cols := 9
-	minesCount := 10
+	// rows := 9
+	// cols := 9
+	// minesCount := 10
+	// Standard Expert Minesweeper dimensions: 16 rows, 30 cols, 99 mines
+	rows := 16
+	cols := 30
+	minesCount := 99
 
 	// 1. Initialize the Model (Pure data state from state package)
 	board := state.NewBoard(rows, cols, minesCount)
