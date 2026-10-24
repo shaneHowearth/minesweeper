@@ -130,17 +130,28 @@ func (gc *GameController) forEachNeighbor(row, col int, fn func(nr, nc int)) {
 	}
 }
 
-func (gc *GameController) checkWinCondition() {
+func (c *GameController) checkWinCondition() {
 	unrevealed := 0
-	for r := 0; r < gc.board.Rows; r++ {
-		for col := 0; col < gc.board.Cols; col++ {
-			if !gc.board.GetTile(r, col).IsRevealed {
+	for r := 0; r < c.board.Rows; r++ {
+		for col := 0; col < c.board.Cols; col++ {
+			if !c.board.GetTile(r, col).IsRevealed {
 				unrevealed++
 			}
 		}
 	}
-	if unrevealed == gc.board.MinesCount {
-		gc.board.State = state.StateWon
+
+	if unrevealed == c.board.MinesCount {
+		c.board.State = state.StateWon
+
+		// Authentic Polish: Automatically flag all remaining hidden mines upon winning
+		for r := 0; r < c.board.Rows; r++ {
+			for col := 0; col < c.board.Cols; col++ {
+				tile := c.board.GetTile(r, col)
+				if !tile.IsRevealed && tile.IsMine {
+					tile.IsFlagged = true
+				}
+			}
+		}
 	}
 }
 

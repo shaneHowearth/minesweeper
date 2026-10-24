@@ -6,7 +6,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/shanehowearth/minesweeper/controller"
@@ -35,133 +34,139 @@ var (
 // Custom Tile Widget representing a single Minesweeper square
 type TileWidget struct {
 	widget.BaseWidget
-	row, col  int
-	ctrl      *controller.GameController
-	board     *state.Board
-	isHovered bool
+	row, col   int
+	ctrl       *controller.GameController
+	board      *state.Board
+	parentView *FyneMinesweeperView
 }
 
-func NewTileWidget(r, c int, ctrl *controller.GameController, board *state.Board) *TileWidget {
-	t := &TileWidget{row: r, col: c, ctrl: ctrl, board: board}
+func NewTileWidget(r, c int, ctrl *controller.GameController, board *state.Board, parentView *FyneMinesweeperView) *TileWidget {
+	t := &TileWidget{
+		row:        r,
+		col:        c,
+		ctrl:       ctrl,
+		board:      board,
+		parentView: parentView,
+	}
 	t.ExtendBaseWidget(t)
 	return t
 }
 
-// Mouse event handling (Primary/Left Click & Secondary/Right Click)
 func (t *TileWidget) Tapped(e *fyne.PointEvent) {
 	t.ctrl.HandleReveal(t.row, t.col)
+	t.parentView.Refresh() // Triggers global refresh, updating this tile
 }
 
 func (t *TileWidget) TappedSecondary(e *fyne.PointEvent) {
 	t.ctrl.HandleToggleFlag(t.row, t.col)
+	t.parentView.Refresh() // Triggers global refresh, updating this tile
 }
 
-// Implement Desktop canvas mouse listener for classic face reaction during click-down
-func (t *TileWidget) MouseDown(e *desktop.MouseEvent) {
-	if e.Button == desktop.MouseButtonPrimary {
-		// Trigger "O" face on smiley during click down
-		// (Signal your view manager to update face state if desired)
+func (t *TileWidget) CreateRenderer() fyne.WidgetRenderer {
+	bg := canvas.NewRectangle(WinGray)
+
+	// 3D Bevel lines for unrevealed state
+	top := canvas.NewRectangle(WinWhite)
+	left := canvas.NewRectangle(WinWhite)
+	bottom := canvas.NewRectangle(WinDarkGray)
+	right := canvas.NewRectangle(WinDarkGray)
+
+	label := canvas.NewText("", WinBlack)
+	label.Alignment = fyne.TextAlignCenter
+	label.TextSize = 14
+
+	return &tileRenderer{
+		tileWidget: t,
+		bg:         bg,
+		top:        top,
+		left:       left,
+		bottom:     bottom,
+		right:      right,
+		label:      label,
+		objects:    []fyne.CanvasObject{bg, top, left, bottom, right, label},
 	}
 }
 
-func (t *TileWidget) MouseUp(e *desktop.MouseEvent) {}
-
-func (t *TileWidget) CreateRenderer() fyne.WidgetRenderer {
-	return &tileRenderer{tileWidget: t}
-}
-
-// Custom Renderer to draw classic 3D bevels and digits
 type tileRenderer struct {
-	tileWidget *TileWidget
+	tileWidget               *TileWidget
+	bg                       *canvas.Rectangle
+	top, left, bottom, right *canvas.Rectangle
+	label                    *canvas.Text
+	objects                  []fyne.CanvasObject
 }
 
-func (r *tileRenderer) Destroy()           {}
-func (r *tileRenderer) Layout(s fyne.Size) {}
+func (r *tileRenderer) Destroy() {}
+
 func (r *tileRenderer) MinSize() fyne.Size {
-	return fyne.NewSize(24, 24) // Classic 24x24 pixel tile size
+	return fyne.NewSize(24, 24)
+}
+
+func (r *tileRenderer) Layout(size fyne.Size) {
+	r.bg.Resize(size)
+
+	// Bevel lines positioning
+	r.top.Resize(fyne.NewSize(size.Width, 2))
+	r.top.Move(fyne.NewPos(0, 0))
+
+	r.left.Resize(fyne.NewSize(2, size.Height))
+	r.left.Move(fyne.NewPos(0, 0))
+
+	r.bottom.Resize(fyne.NewSize(size.Width, 2))
+	r.bottom.Move(fyne.NewPos(0, size.Height-2))
+
+	r.right.Resize(fyne.NewSize(2, size.Height))
+	r.right.Move(fyne.NewPos(size.Width-2, 0))
+
+	r.label.Resize(size)
+	r.label.Move(fyne.NewPos(0, 2)) // Center alignment tweak
 }
 
 func (r *tileRenderer) Refresh() {
-	canvas.Refresh(r.tileWidget)
-}
-
-func (r *tileRenderer) Objects() []fyne.CanvasObject {
-	t := r.tileWidget
-	tile := t.board.GetTile(t.row, t.col)
-	size := fyne.NewSize(24, 24)
-
-	var objects []fyne.CanvasObject
-
-	bg := canvas.NewRectangle(WinGray)
-	bg.Resize(size)
-	objects = append(objects, bg)
+	tile := r.tileWidget.board.GetTile(r.tileWidget.row, r.tileWidget.col)
 
 	if !tile.IsRevealed {
-		// Raised 3D Bevel for Unrevealed Tiles
-		top := canvas.NewLine(WinWhite)
-		top.Position1 = fyne.NewPos(0, 0)
-		top.Position2 = fyne.NewPos(24, 0)
-		top.StrokeWidth = 2
-
-		left := canvas.NewLine(WinWhite)
-		left.Position1 = fyne.NewPos(0, 0)
-		left.Position2 = fyne.NewPos(0, 24)
-		left.StrokeWidth = 2
-
-		bottom := canvas.NewLine(WinDarkGray)
-		bottom.Position1 = fyne.NewPos(0, 23)
-		bottom.Position2 = fyne.NewPos(24, 23)
-		bottom.StrokeWidth = 2
-
-		right := canvas.NewLine(WinDarkGray)
-		right.Position1 = fyne.NewPos(23, 0)
-		right.Position2 = fyne.NewPos(23, 24)
-		right.StrokeWidth = 2
-
-		top.StrokeWidth = 2
-		left.StrokeWidth = 2
-		bottom.StrokeWidth = 2
-		right.StrokeWidth = 2
-
-		objects = append(objects, top, left, bottom, right)
+		r.bg.FillColor = WinGray
+		r.top.Show()
+		r.left.Show()
+		r.bottom.Show()
+		r.right.Show()
 
 		if tile.IsFlagged {
-			flagText := canvas.NewText("🚩", color.RGBA{R: 255, G: 0, B: 0, A: 255})
-			flagText.TextSize = 14
-			flagText.Alignment = fyne.TextAlignCenter
-			flagText.Resize(size)
-			objects = append(objects, flagText)
+			r.label.Text = "🚩"
+			r.label.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255}
+			r.label.Show()
+		} else {
+			r.label.Text = ""
+			r.label.Hide()
 		}
 	} else {
-		// Sunken 3D Border for Revealed Tiles
-		border := canvas.NewRectangle(color.Transparent)
-		border.StrokeColor = WinDarkGray
-		border.StrokeWidth = 1
-		border.Resize(size)
-		objects = append(objects, border)
+		// Revealed state
+		r.top.Hide()
+		r.left.Hide()
+		r.bottom.Hide()
+		r.right.Hide()
 
 		if tile.IsMine {
-			mineText := canvas.NewText("💣", WinBlack)
-			if t.board.State == state.StateLost && tile.IsRevealed {
-				// Mine that was stepped on
-				bg.FillColor = color.RGBA{R: 255, G: 0, B: 0, A: 255}
-			}
-			mineText.TextSize = 14
-			mineText.Alignment = fyne.TextAlignCenter
-			mineText.Resize(size)
-			objects = append(objects, mineText)
+			r.bg.FillColor = color.RGBA{R: 255, G: 0, B: 0, A: 255}
+			r.label.Text = "💣"
+			r.label.Show()
 		} else if tile.AdjacentMines > 0 {
-			numText := canvas.NewText(
-				fmt.Sprintf("%d", tile.AdjacentMines),
-				NumberColors[tile.AdjacentMines],
-			)
-			numText.TextSize = 16
-			numText.TextStyle.Bold = true
-			numText.Alignment = fyne.TextAlignCenter
-			numText.Resize(size)
-			objects = append(objects, numText)
+			r.bg.FillColor = WinGray
+			r.label.Text = fmt.Sprintf("%d", tile.AdjacentMines)
+			r.label.Color = NumberColors[tile.AdjacentMines]
+			r.label.TextStyle.Bold = true
+			r.label.Show()
+		} else {
+			r.bg.FillColor = color.RGBA{R: 220, G: 220, B: 220, A: 255} // Sunken light gray
+			r.label.Text = ""
+			r.label.Hide()
 		}
 	}
 
-	return objects
+	r.bg.Refresh()
+	r.label.Refresh()
+}
+
+func (r *tileRenderer) Objects() []fyne.CanvasObject {
+	return r.objects
 }

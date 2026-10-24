@@ -75,7 +75,8 @@ func (v *FyneMinesweeperView) buildGrid() {
 	v.gridBox.Objects = nil
 	for r := 0; r < v.board.Rows; r++ {
 		for c := 0; c < v.board.Cols; c++ {
-			tileWidget := NewTileWidget(r, c, v.ctrl, v.board)
+			// Pass 'v' (the FyneMinesweeperView pointer) as the 5th argument here:
+			tileWidget := NewTileWidget(r, c, v.ctrl, v.board, v)
 			v.gridBox.Add(tileWidget)
 		}
 	}
